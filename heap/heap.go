@@ -85,8 +85,8 @@ func (h *Heap) Pop() HeapElement {
 
 	topVal := h.bucket[1] // index 1 is the top element
 
-	if len(h.bucket) <= 2 {
-		h.bucket = h.bucket[0:1:cap(h.bucket)] // delete all elements
+	if len(h.bucket) <= 2 { // remain one element
+		h.bucket = make([]HeapElement, 1, heapInitSize) // clean all elements
 	} else {
 		h.bucket[1] = h.bucket[len(h.bucket)-1]  // save last element to top position
 		h.bucket = h.bucket[0 : len(h.bucket)-1] // delete last element
