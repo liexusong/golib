@@ -1,47 +1,66 @@
+// Copyright 2018 LieXuSong. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package heap
 
-type HeapValue interface {
-	GetSortValue() int
+type HeapElement interface {
+	GetHeapCompareIndex() int64
 }
 
 type Heap struct {
-	bucket []HeapValue
+	bucket []HeapElement
 	hType  int
 }
 
 const (
-	heapInitSize = 64
+	heapInitSize = 128
 	HeapTypeMax  = 1
 	HeapTypeMin  = 2
 )
 
+func NewMaxHeap() *Heap {
+	return New(HeapTypeMax)
+}
+
+func NewMinHeap() *Heap {
+	return New(HeapTypeMin)
+}
+
 func New(hType int) *Heap {
 	return &Heap{
-		bucket: make([]HeapValue, 0, heapInitSize),
+		bucket: make([]HeapElement, 1, heapInitSize),
 		hType:  hType,
 	}
 }
 
-func heapComparePeer(v1 HeapValue, v2 HeapValue) int {
-	sortVal1, sortVal2 := v1.GetSortValue(), v2.GetSortValue()
+func heapCompareFunc(v1 HeapElement, v2 HeapElement) int {
+	idx1, idx2 := v1.GetHeapCompareIndex(), v2.GetHeapCompareIndex()
 
-	if sortVal1 > sortVal2 {
+	if idx1 > idx2 {
 		return 1
-	} else if sortVal1 == sortVal2 {
+	} else if idx1 == idx2 {
 		return 0
 	}
 	return -1
 }
 
-func (h *Heap) Push(v HeapValue) {
+func (h *Heap) Empty() bool {
+	if len(h.bucket) <= 1 {
+		return true
+	}
+	return false
+}
+
+func (h *Heap) Push(v HeapElement) {
 	currentIdx := len(h.bucket)
 
-	h.bucket = append(h.bucket, v)
+	h.bucket = append(h.bucket, v) // append the heap buckets tail
 
-	for ; currentIdx > 0; currentIdx = currentIdx / 2 {
+	for ; currentIdx > 1; currentIdx = currentIdx / 2 {
 		parentIdx := currentIdx / 2
 
-		result := heapComparePeer(h.bucket[currentIdx], h.bucket[parentIdx])
+		result := heapCompareFunc(h.bucket[currentIdx], h.bucket[parentIdx])
 
 		switch h.hType {
 		case HeapTypeMax:
@@ -59,37 +78,47 @@ func (h *Heap) Push(v HeapValue) {
 	}
 }
 
-func (h *Heap) Pop() HeapValue {
-	if len(h.bucket) == 0 {
+func (h *Heap) Pop() HeapElement {
+	if h.Empty() {
 		return nil
 	}
 
-	retVal := h.bucket[0]
+	topVal := h.bucket[1] // index 1 is the top element
 
-	h.bucket[0] = h.bucket[len(h.bucket)-1]
-	h.bucket = h.bucket[0 : len(h.bucket)-1] // delete last element
+	if len(h.bucket) <= 2 {
+		h.bucket = h.bucket[0:1:cap(h.bucket)] // delete all elements
+	} else {
+		h.bucket[1] = h.bucket[len(h.bucket)-1]  // save last element to top position
+		h.bucket = h.bucket[0 : len(h.bucket)-1] // delete last element
+	}
+
+	length := len(h.bucket)
 
 loop:
-	for lastIdx := 0; lastIdx < len(h.bucket)-1; {
+	for lastIdx := 1; lastIdx < length-1; {
 		leftIdx, rightIdx := lastIdx*2, lastIdx*2+1
 
-		winner := leftIdx
+		if leftIdx > length-1 {
+			break loop
+		}
 
-		if rightIdx <= len(h.bucket)-1 {
-			result := heapComparePeer(h.bucket[rightIdx], h.bucket[leftIdx])
+		swapIdx := leftIdx
+
+		if rightIdx <= length-1 {
+			result := heapCompareFunc(h.bucket[rightIdx], h.bucket[leftIdx])
 			switch h.hType {
 			case HeapTypeMax:
 				if result > 0 {
-					winner = rightIdx
+					swapIdx = rightIdx
 				}
 			case HeapTypeMin:
 				if result < 0 {
-					winner = rightIdx
+					swapIdx = rightIdx
 				}
 			}
 		}
 
-		result := heapComparePeer(h.bucket[winner], h.bucket[lastIdx])
+		result := heapCompareFunc(h.bucket[swapIdx], h.bucket[lastIdx])
 
 		switch h.hType {
 		case HeapTypeMax:
@@ -102,17 +131,17 @@ loop:
 			}
 		}
 
-		h.bucket[winner], h.bucket[lastIdx] = h.bucket[lastIdx], h.bucket[winner]
+		h.bucket[swapIdx], h.bucket[lastIdx] = h.bucket[lastIdx], h.bucket[swapIdx]
 
-		lastIdx = winner
+		lastIdx = swapIdx
 	}
 
-	return retVal
+	return topVal
 }
 
-func (h *Heap) Top() HeapValue {
-	if len(h.bucket) == 0 {
+func (h *Heap) Top() HeapElement {
+	if h.Empty() {
 		return nil
 	}
-	return h.bucket[0]
+	return h.bucket[1]
 }
