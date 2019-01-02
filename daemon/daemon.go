@@ -7,7 +7,7 @@ import (
 	"syscall"
 )
 
-func initDaemonEnv() {
+func initDaemonRuntime() {
 	syscall.Setsid() // create new session
 
 	fd, err := os.OpenFile("/dev/null", os.O_RDWR, 0)
@@ -37,7 +37,7 @@ func Daemon() (int, error) {
 	}
 
 	if isDaemon { // daemon process
-		initDaemonEnv()
+		initDaemonRuntime()
 		return 0, nil
 	}
 
