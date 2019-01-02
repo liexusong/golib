@@ -8,8 +8,13 @@ import (
 )
 
 func initDaemonRuntime() {
-	syscall.Setsid() // create new session
+	// create new session
+	_, err := syscall.Setsid()
+	if err != nil {
+		return
+	}
 
+	// update stdin:stdout:stderr to null
 	fd, err := os.OpenFile("/dev/null", os.O_RDWR, 0)
 	if err != nil {
 		return
@@ -26,12 +31,12 @@ func initDaemonRuntime() {
 
 func Daemon() (int, error) {
 	if runtime.GOOS == "windows" {
-		return -1, errors.New("not support windows operating system")
+		return -1, errors.New("unsupported windows operating system")
 	}
 
 	isDaemon := false
 	for i := 1; i < len(os.Args); i++ {
-		if os.Args[i] == "-daemon" {
+		if os.Args[i] == "--daemon" {
 			isDaemon = true
 		}
 	}
@@ -43,10 +48,11 @@ func Daemon() (int, error) {
 
 	procPath := os.Args[0]
 
+	// add "--daemon" arg
 	args := make([]string, 0, len(os.Args)+1)
 
 	args = append(args, os.Args...)
-	args = append(args, "-daemon")
+	args = append(args, "--daemon")
 
 	attr := &syscall.ProcAttr{
 		Env: os.Environ(),
