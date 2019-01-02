@@ -15,9 +15,9 @@ func initDaemonEnv() {
 		return
 	}
 
-	syscall.Dup2(int(os.Stdin.Fd()), int(fd.Fd()))
-	syscall.Dup2(int(os.Stdout.Fd()), int(fd.Fd()))
-	syscall.Dup2(int(os.Stderr.Fd()), int(fd.Fd()))
+	syscall.Dup2(int(fd.Fd()), int(os.Stdin.Fd()))
+	syscall.Dup2(int(fd.Fd()), int(os.Stdout.Fd()))
+	syscall.Dup2(int(fd.Fd()), int(os.Stderr.Fd()))
 
 	if fd.Fd() > os.Stderr.Fd() {
 		_ = fd.Close()
