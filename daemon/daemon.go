@@ -57,7 +57,8 @@ func Daemon() (int, error) {
 	args = append(args, daemonFlagName)
 
 	attr := &syscall.ProcAttr{
-		Env: os.Environ(),
+		Env:   os.Environ(),
+		Files: []uintptr{os.Stdin.Fd(), os.Stdout.Fd(), os.Stderr.Fd()},
 	}
 
 	pid, err := syscall.ForkExec(procPath, args, attr)
