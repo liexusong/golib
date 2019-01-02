@@ -7,6 +7,8 @@ import (
 	"syscall"
 )
 
+const daemonFlagName = "--daemon"
+
 func initDaemonRuntime() {
 	// create new session
 	_, err := syscall.Setsid()
@@ -36,7 +38,7 @@ func Daemon() (int, error) {
 
 	isDaemon := false
 	for i := 1; i < len(os.Args); i++ {
-		if os.Args[i] == "--daemon" {
+		if os.Args[i] == daemonFlagName {
 			isDaemon = true
 		}
 	}
@@ -52,7 +54,7 @@ func Daemon() (int, error) {
 	args := make([]string, 0, len(os.Args)+1)
 
 	args = append(args, os.Args...)
-	args = append(args, "--daemon")
+	args = append(args, daemonFlagName)
 
 	attr := &syscall.ProcAttr{
 		Env: os.Environ(),
