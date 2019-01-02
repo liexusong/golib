@@ -22,9 +22,9 @@ func initDaemonRuntime() {
 		return
 	}
 
-	syscall.Dup2(int(fd.Fd()), int(os.Stdin.Fd()))
-	syscall.Dup2(int(fd.Fd()), int(os.Stdout.Fd()))
-	syscall.Dup2(int(fd.Fd()), int(os.Stderr.Fd()))
+	_ = syscall.Dup2(int(fd.Fd()), int(os.Stdin.Fd()))
+	_ = syscall.Dup2(int(fd.Fd()), int(os.Stdout.Fd()))
+	_ = syscall.Dup2(int(fd.Fd()), int(os.Stderr.Fd()))
 
 	if fd.Fd() > os.Stderr.Fd() {
 		_ = fd.Close()
