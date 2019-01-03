@@ -7,28 +7,49 @@ import (
 	"syscall"
 )
 
-const daemonFlagName = "--daemon"
+const daemonFlag = "--daemon"
 
-func initDaemonRuntime() {
+func initDaemonRuntime() error {
 	// create new session
 	_, err := syscall.Setsid()
 	if err != nil {
-		return
+		return err
+	}
+
+	err = os.Chdir("/")
+	if err != nil {
+		return err
 	}
 
 	// update stdin:stdout:stderr to null
 	fd, err := os.OpenFile("/dev/null", os.O_RDWR, 0)
 	if err != nil {
-		return
+		return err
 	}
 
-	_ = syscall.Dup2(int(fd.Fd()), int(os.Stdin.Fd()))
-	_ = syscall.Dup2(int(fd.Fd()), int(os.Stdout.Fd()))
-	_ = syscall.Dup2(int(fd.Fd()), int(os.Stderr.Fd()))
+	err = syscall.Dup2(int(fd.Fd()), int(os.Stdin.Fd()))
+	if err != nil {
+		return err
+	}
+
+	err = syscall.Dup2(int(fd.Fd()), int(os.Stdout.Fd()))
+	if err != nil {
+		return err
+	}
+
+	err = syscall.Dup2(int(fd.Fd()), int(os.Stderr.Fd()))
+	if err != nil {
+		return err
+	}
 
 	if fd.Fd() > os.Stderr.Fd() {
-		_ = fd.Close()
+		err = fd.Close()
+		if err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 func Daemon() (int, error) {
@@ -38,13 +59,17 @@ func Daemon() (int, error) {
 
 	isDaemon := false
 	for i := 1; i < len(os.Args); i++ {
-		if os.Args[i] == daemonFlagName {
+		if os.Args[i] == daemonFlag {
 			isDaemon = true
 		}
 	}
 
 	if isDaemon { // daemon process
-		initDaemonRuntime()
+		err := initDaemonRuntime()
+		if err != nil {
+			return -1, err
+		}
+
 		return 0, nil
 	}
 
@@ -54,7 +79,7 @@ func Daemon() (int, error) {
 	args := make([]string, 0, len(os.Args)+1)
 
 	args = append(args, os.Args...)
-	args = append(args, daemonFlagName)
+	args = append(args, daemonFlag)
 
 	attr := &syscall.ProcAttr{
 		Env:   os.Environ(),
